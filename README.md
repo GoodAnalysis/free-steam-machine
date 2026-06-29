@@ -77,6 +77,24 @@ handler (starting Steam first if it isn't running).
   or your controller reports connected at login. Drop the flag &mdash; the default
   already ignores an already-on pad.
 
+## Use it from your iPhone (iOS)
+
+iOS can't run a background watcher and has no Big Picture of its own, so the Windows
+behaviour doesn't port directly. Two setups *do* work &mdash; full steps in
+[ios/README.md](ios/README.md):
+
+1. **Controller connects to your iPhone &rarr; open a game app** (e.g. Steam Link to
+   stream your PC). A Shortcuts *Bluetooth* automation, no code required.
+2. **iPhone as a remote** that opens Big Picture on the PC, using the included
+   `bigpicture_server.py`:
+
+   ```powershell
+   python bigpicture_server.py                  # http://<pc-ip>:8765/bigpicture
+   python bigpicture_server.py --token mysecret # require ?token=mysecret
+   ```
+
+   An iPhone Home Screen shortcut then hits that URL over your LAN.
+
 ## Not on Windows?
 
 - **Steam Deck / SteamOS** already boots into Gamepad UI; you don't need this.
