@@ -43,6 +43,13 @@ That drops a shortcut in your Startup folder, so it starts automatically every t
 you sign in. The installer also prints a command to start it immediately without
 rebooting.
 
+To also wake the monitor on connect, or log to a file, pass the matching switches:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install.ps1 -Wake        # wake display too
+powershell -ExecutionPolicy Bypass -File .\install.ps1 -Wake -Log   # wake + log
+```
+
 To remove it:
 
 ```powershell
@@ -55,7 +62,33 @@ powershell -ExecutionPolicy Bypass -File .\uninstall.ps1
 | -------------- | ------ |
 | _(none)_       | Watch for a **new** connection. A pad that is already on when the watcher starts is ignored, so rebooting with the controller on won't relaunch Big Picture. |
 | `--launch-now` | Also fire if a controller is already connected at start. Use this if you usually boot with the pad already on and want Big Picture then too. |
+| `--wake`       | On connect, also wake the monitor and dismiss the screensaver before opening Big Picture. **Cannot** bypass a password/PIN lock &mdash; see **Waking the screen** below. |
 | `--log`        | Write a timestamped log to `%LOCALAPPDATA%\controller-bigpicture\watcher.log`. Handy for confirming the silent `pythonw` instance is alive. |
+
+## Waking the screen (`--wake`)
+
+With `--wake`, the watcher also turns the monitor back on and dismisses a running
+screensaver the moment the controller connects, so a couch PC goes from dark screen
+straight to Big Picture.
+
+**The important limit:** no user-space script can get past the Windows **password /
+PIN lock screen** &mdash; that's a deliberate security boundary, not something to work
+around. `--wake` only helps when the session is *unlocked underneath* (monitor asleep
+or screensaver running). If the PC is genuinely locked, the most it does is light up
+the monitor showing the lock screen; you still sign in.
+
+To make a living-room PC go all the way to the desktop hands-free, change the Windows
+setting rather than the script:
+
+- **Settings &rarr; Accounts &rarr; Sign-in options &rarr; "If you've been away, when
+  should Windows require you to sign in again?" &rarr; Never.**
+- If a screensaver is set, untick **"On resume, display logon screen"** (Screen Saver
+  Settings).
+- For a secure auto-unlock that *does* satisfy the lock screen, use **Windows Hello**
+  (face / fingerprint) &mdash; a controller can't supply that, but Hello can.
+
+Storing your password to auto-type it is **not** supported here: it's a real security
+risk and defeats the point of the lock.
 
 ## How it works
 
@@ -76,6 +109,8 @@ handler (starting Steam first if it isn't running).
 - **It opens Big Picture on every reboot.** You're probably passing `--launch-now`,
   or your controller reports connected at login. Drop the flag &mdash; the default
   already ignores an already-on pad.
+- **`--wake` lights the monitor but I still see the lock screen.** Expected when the
+  session requires a password/PIN. See **Waking the screen** above.
 
 ## Use it from your iPhone (iOS)
 

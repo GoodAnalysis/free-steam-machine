@@ -5,7 +5,15 @@
 .DESCRIPTION
     Creates a shortcut in your Startup folder that runs the watcher with
     pythonw.exe (no console window) each time you sign in.
+.PARAMETER Wake
+    Also wake the display / dismiss the screensaver on controller connect.
+.PARAMETER Log
+    Write a startup/connect log to %LOCALAPPDATA%\controller-bigpicture.
 #>
+param(
+    [switch]$Wake,
+    [switch]$Log
+)
 
 $ErrorActionPreference = 'Stop'
 
@@ -21,20 +29,26 @@ if (-not $pythonw) {
     throw "pythonw.exe not found on PATH. Install Python for Windows from python.org with 'Add to PATH' checked."
 }
 
+$arguments = '"{0}"' -f $watcher
+if ($Wake) { $arguments += ' --wake' }
+if ($Log)  { $arguments += ' --log' }
+
 $startup = [Environment]::GetFolderPath('Startup')
 $lnkPath = Join-Path $startup 'Controller Big Picture.lnk'
 
 $shell = New-Object -ComObject WScript.Shell
 $lnk = $shell.CreateShortcut($lnkPath)
 $lnk.TargetPath       = $pythonw
-$lnk.Arguments        = '"{0}"' -f $watcher
+$lnk.Arguments        = $arguments
 $lnk.WorkingDirectory = $scriptDir
 $lnk.Description      = 'Open Steam Big Picture when an Xbox controller connects'
 $lnk.Save()
 
 Write-Host "Installed startup entry:" -ForegroundColor Green
 Write-Host "  $lnkPath"
+Write-Host "  target: $pythonw"
+Write-Host "  args:   $arguments"
 Write-Host ""
 Write-Host "It will run automatically next time you sign in." -ForegroundColor Green
 Write-Host "To start it now without rebooting, run:" -ForegroundColor Green
-Write-Host "  Start-Process -FilePath '$pythonw' -ArgumentList '`"$watcher`"'"
+Write-Host "  Start-Process -FilePath '$pythonw' -ArgumentList '$arguments'"

@@ -11,6 +11,7 @@ not reachable from inside WSL.
 Usage:
     python controller_bigpicture.py              # watch; ignore a pad already on at start
     python controller_bigpicture.py --launch-now # also fire if a pad is already on
+    python controller_bigpicture.py --wake       # also wake the display / dismiss screensaver
     python controller_bigpicture.py --log        # write a log to %LOCALAPPDATA%
 """
 
@@ -81,6 +82,31 @@ def launch_big_picture() -> None:
     os.startfile(STEAM_BIGPICTURE_URL)
 
 
+def wake_display() -> None:
+    """Turn the monitor back on and dismiss a running screensaver.
+
+    This can NOT bypass a password/PIN lock screen - that is a Windows security
+    boundary no user-space script can cross. It only helps when the session is
+    unlocked underneath (monitor asleep or screensaver running), e.g. a couch /
+    HTPC set to not require sign-in. If the session is genuinely locked, the most
+    this does is light up the monitor showing the lock screen.
+    """
+    ES_SYSTEM_REQUIRED = 0x00000001
+    ES_DISPLAY_REQUIRED = 0x00000002
+    KEYEVENTF_KEYUP = 0x0002
+    VK_F15 = 0x7E  # exists in the API but does nothing visible in practice
+
+    # Reset the idle timer once (no ES_CONTINUOUS) -> powers the monitor back on.
+    ctypes.windll.kernel32.SetThreadExecutionState(
+        ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED
+    )
+    # Tap a harmless key to dismiss a screensaver. Injected input only reaches the
+    # interactive desktop, so this is a no-op on a locked secure desktop.
+    user32 = ctypes.windll.user32
+    user32.keybd_event(VK_F15, 0, 0, 0)
+    user32.keybd_event(VK_F15, 0, KEYEVENTF_KEYUP, 0)
+
+
 # --- logging (optional) ----------------------------------------------------
 
 def make_logger(enabled: bool):
@@ -111,6 +137,7 @@ def make_logger(enabled: bool):
 
 def main() -> int:
     launch_now = "--launch-now" in sys.argv
+    wake = "--wake" in sys.argv
     log = make_logger("--log" in sys.argv)
 
     try:
@@ -123,12 +150,17 @@ def main() -> int:
     # watcher starts does NOT trigger a launch. --launch-now opts into firing on
     # that first detection instead (handy if you boot with the pad already on).
     was_connected = False if launch_now else any_controller_connected(xinput)
-    log(f"watching (launch_now={launch_now}, seeded connected={was_connected})")
+    log(f"watching (launch_now={launch_now}, wake={wake}, seeded connected={was_connected})")
 
     while True:
         is_connected = any_controller_connected(xinput)
         if is_connected and not was_connected:
-            log("controller connected -> opening Big Picture")
+            log("controller connected -> " + ("waking + opening Big Picture" if wake else "opening Big Picture"))
+            if wake:
+                try:
+                    wake_display()
+                except OSError as exc:
+                    log(f"wake failed: {exc}")
             try:
                 launch_big_picture()
             except OSError as exc:
