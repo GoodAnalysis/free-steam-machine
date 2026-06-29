@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Logs produced by --log
+*.log
+
+# OS cruft
+Thumbs.db
+desktop.ini
+.DS_Store
