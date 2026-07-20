@@ -1,11 +1,10 @@
 <div align="center">
 
-# 🎮 free-steam-machine
+# free-steam-machine
 
-### Turn a controller on. Steam Big Picture opens. Put the controller down and play.
+### Turn a controller on and Steam Big Picture opens.
 
-A tiny background watcher that makes a Windows PC behave like a console.<br>
-No alt-tabbing to a launcher. No keyboard. No mouse. Pick up the pad and the machine meets you where you are.
+A small background watcher that lets a Windows PC start a game without a keyboard or mouse.
 
 <br>
 
@@ -29,12 +28,12 @@ $ python controller_bigpicture.py --wake --log
 23:42:46  watching (wake=True, guard=True, park=True, guide=yes, seeded connected=False)
 23:51:02  controller connected -> waking + opening Big Picture
 23:58:31  controller disconnected (confirmed after 5 polls)
-00:04:17  controller connected -> skipped (Steam game running (appid 2322010))   ← didn't interrupt you
+00:04:17  controller connected -> skipped (Steam game running (appid 2322010))
 00:19:55  guide double-tap -> opening Big Picture
 ```
 
 > [!IMPORTANT]
-> **Windows only.** Must run on native Windows Python — XInput is a host API and is invisible from inside WSL.
+> Windows only. It must run on native Windows Python, because XInput is a host API and is invisible from inside WSL.
 
 <br>
 
@@ -42,7 +41,7 @@ $ python controller_bigpicture.py --wake --log
 
 - [What it does](#what-it-does) · [Why this exists](#why-this-exists)
 - [Requirements](#requirements) · [Quick start](#quick-start) · [Install it properly](#install-it-properly) · [Options](#options)
-- [**Not interrupting your game**](#not-interrupting-your-game) — the interesting part
+- [Not interrupting your game](#not-interrupting-your-game)
 - [Guide double-tap](#summon-on-demand-guide-double-tap) · [Battery warning](#battery-warning) · [Waking the screen](#waking-the-screen---wake)
 - [How it works](#how-it-works) · [Troubleshooting](#troubleshooting) · [iPhone](#use-it-from-your-iphone) · [Other platforms](#not-on-windows)
 
@@ -52,54 +51,51 @@ $ python controller_bigpicture.py --wake --log
 
 | | |
 | --- | --- |
-| 🎮 **Opens Big Picture on connect** | Bluetooth, Xbox wireless dongle, or USB. It polls XInput, so it doesn't care how the pad arrives. |
-| ⚡ **Guide double-tap** | Tap the Xbox button twice, any time, whatever is running. |
-| 🛡️ **Stays out of your way** | It will not throw Big Picture over a game you're playing. Harder than it sounds — [here's why](#not-interrupting-your-game). |
-| 💡 **Wakes the screen** | Optional, so a couch PC goes from dark straight to Big Picture. |
-| 🔋 **Warns before the pad dies** | A toast that doesn't steal focus. |
-| 🖱️ **Parks the mouse pointer** | No cursor sat in the middle of your TV. |
+| **Opens Big Picture on connect** | Works over Bluetooth, the Xbox wireless dongle, or USB. It polls XInput, so it doesn't care how the pad arrives. |
+| **Guide double-tap** | Tap the Xbox button twice to open Big Picture at any time. |
+| **Leaves running games alone** | It won't open Big Picture over a game you're playing. See [Not interrupting your game](#not-interrupting-your-game). |
+| **Wakes the screen** | Optional, so a couch PC goes from a dark screen to Big Picture. |
+| **Warns on low battery** | A toast notification, which doesn't steal focus from a game. |
+| **Parks the mouse pointer** | Moves the cursor to the corner instead of leaving it in the middle of the TV. |
 
-No third-party packages. The whole thing is the Python standard library plus `ctypes` calls into Win32.
+No third-party packages. It uses the Python standard library and `ctypes` calls into Win32.
 
 ## Why this exists
 
-There's no built-in Steam setting for it. Valve's *"Guide button focuses Steam"* option needs Steam
-already running **and** a manual double-tap — which is most of the work you were trying to avoid.
-This closes the gap: the PC reacts to the controller, not the other way round.
-
----
+Steam has no setting for this. The closest thing, "Guide button focuses Steam", needs Steam already
+running and still requires you to press the button yourself.
 
 ## Requirements
 
 - Windows 10 or 11
-- [Python for Windows](https://www.python.org/downloads/windows/) 3.8+, installed with **"Add python.exe to PATH"** ticked
-- Steam (which registers the `steam://` protocol handler)
+- [Python for Windows](https://www.python.org/downloads/windows/) 3.8+, installed with "Add python.exe to PATH" ticked
+- Steam, which registers the `steam://` protocol handler
 
 ## Quick start
 
-Try it in the foreground first, so you can see any error:
+Run it in the foreground first so you can see any errors:
 
 ```powershell
 python controller_bigpicture.py
 ```
 
-Leave it running and turn your controller on. Big Picture should open. <kbd>Ctrl</kbd>+<kbd>C</kbd> to stop.
+Leave it running and turn your controller on. Big Picture should open. Press <kbd>Ctrl</kbd>+<kbd>C</kbd> to stop.
 
 ## Install it properly
 
-Drops a shortcut in your Startup folder that runs the watcher with `pythonw.exe` — no console window,
-starts every time you sign in:
+This drops a shortcut in your Startup folder that runs the watcher with `pythonw.exe`, so there's no
+console window and it starts whenever you sign in:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
-The installer prints a command to start it immediately without rebooting. Switches pass straight
+The installer prints a command to start it immediately without rebooting. Switches are passed
 through to the watcher:
 
 ```powershell
 .\install.ps1 -Wake          # wake the display on connect
-.\install.ps1 -Wake -Log     # ...and log to %LOCALAPPDATA%
+.\install.ps1 -Wake -Log     # also log to %LOCALAPPDATA%
 .\install.ps1 -NoGuard       # allow launching over a running game
 ```
 
@@ -113,31 +109,29 @@ powershell -ExecutionPolicy Bypass -File .\uninstall.ps1
 
 | Flag | Effect |
 | ---- | ------ |
-| _(none)_ | Watch for a **new** connection. A pad already on when the watcher starts is ignored, so rebooting with the controller on won't relaunch Big Picture. |
-| `--launch-now` | Also fire if a controller is already connected at start. Use if you usually boot with the pad on. |
-| `--wake` | On connect, wake the monitor and dismiss the screensaver. **Cannot** bypass a password/PIN lock — see [Waking the screen](#waking-the-screen---wake). |
+| _(none)_ | Watch for a new connection. A pad that is already on when the watcher starts is ignored, so rebooting with the controller on won't relaunch Big Picture. |
+| `--launch-now` | Also fire if a controller is already connected at start. Useful if you tend to boot with the pad on. |
+| `--wake` | On connect, wake the monitor and dismiss the screensaver. This cannot bypass a password or PIN lock. See [Waking the screen](#waking-the-screen---wake). |
 | `--no-guard` | Launch even when a game is running or a fullscreen app owns the foreground. |
-| `--no-park` | Leave the mouse pointer alone instead of parking it bottom-right. |
-| `--log` | Write a timestamped log to `%LOCALAPPDATA%\controller-bigpicture\watcher.log`. Handy for confirming the silent `pythonw` instance is alive. |
+| `--no-park` | Leave the mouse pointer where it is. |
+| `--log` | Write a timestamped log to `%LOCALAPPDATA%\controller-bigpicture\watcher.log`. Useful for checking the silent `pythonw` instance is alive. |
 
 ---
 
 ## Not interrupting your game
 
-> [!WARNING]
-> This is the part that matters, and the part that's easy to get wrong.
+"Did a controller just appear?" looks like a one-line state comparison, but XInput reports a
+disconnect fairly often when nothing has actually been unplugged:
 
-Naively, *"did a controller just appear?"* looks like a one-line state comparison. It isn't, because
-**XInput lies briefly**:
+- Steam Input hides the physical pad and substitutes a virtual one when a game launches or changes its input config, so for a moment no real controller exists.
+- Wireless pads drop frames, and they power off when idle then reconnect on the next button press.
+- USB re-enumeration blanks the slot for a fraction of a second.
 
-- **Steam Input** hides the physical pad and substitutes a virtual one whenever a game launches or changes input config. For a moment, no real controller exists.
-- **Wireless pads** drop frames, and idle-power-off then reconnect on the next button press.
-- **USB re-enumeration** blanks the slot for a fraction of a second.
+If a single failed poll counts as a disconnect, all of these look like an unplug followed by a
+replug. Big Picture then opens on top of whatever you're playing, the game loses focus, and it
+pauses.
 
-A watcher that trusts a single failed poll reads every one of these as unplug + replug. It opens Big
-Picture on top of your running game, the game loses focus, and it pauses. Mid-boss. Repeatedly.
-
-So each trigger runs this gauntlet:
+Each trigger therefore has to get past four checks:
 
 ```mermaid
 flowchart TD
@@ -157,112 +151,110 @@ flowchart TD
     K -- no --> M["Open Big Picture, park cursor"]
 ```
 
-**1. Debounce.** A dropout must persist for 5 consecutive polls (~5s) before it counts as a
-disconnect. Blips never reset the "connected" latch, so they can't manufacture a rising edge.
+**1. Debounce.** A dropout has to persist for 5 consecutive polls, about 5 seconds, before it counts
+as a disconnect. Short blips never reset the "connected" latch, so they can't produce a rising edge.
 
-**2. Game guard.** Nothing auto-fires while a Steam game is running, read from
-`HKCU\Software\Valve\Steam\RunningAppID`. This is the strongest signal available, and critically it
-stays true for a game that is alt-tabbed, minimised, or on another monitor — cases the foreground
-checks below would miss entirely.
+**2. Game guard.** Nothing fires automatically while a Steam game is running. This is read from
+`HKCU\Software\Valve\Steam\RunningAppID`, which stays set for a game that is alt-tabbed, minimised
+or on another monitor. The foreground checks below would miss all three cases.
 
-**3. Fullscreen guard.** Checked two ways, because exclusive-fullscreen and borderless windowed games
-report completely differently:
+**3. Fullscreen guard.** Checked two ways, because exclusive-fullscreen and borderless windowed
+games report differently:
 
 - `SHQueryUserNotificationState` catches D3D fullscreen and presentation mode.
-- A window-rect-vs-monitor comparison catches borderless windowed, which often doesn't set the notification state at all.
+- A comparison of the foreground window's rect against its monitor catches borderless windowed, which often doesn't set the notification state.
 
-**4. Cooldown.** At most one launch per 30 seconds, whatever the detector claims.
+**4. Cooldown.** One launch per 30 seconds at most.
 
-`--wake`'s screensaver keypress is gated on the same principle: it's only injected when the
-screensaver is genuinely running or the session has been idle 60s+. Injected input goes to whichever
-window has focus, so an ungated keypress is a phantom keystroke straight into your game.
+The screensaver keypress used by `--wake` is gated the same way. It is only injected when the
+screensaver is running or the session has been idle for 60 seconds or more. Injected input goes to
+whichever window has focus, so an ungated keypress would land in your game.
 
 > [!TIP]
 > Pass `--no-guard` to disable guards 2 and 3.
 
 ## Summon on demand: Guide double-tap
 
-Double-tap the **Guide** (Xbox) button and Big Picture opens regardless of what's running. This is an
-explicit request, so it deliberately bypasses the guards above.
+Double-tap the Guide (Xbox) button and Big Picture opens regardless of what's running. You asked for
+it explicitly, so it skips the guards above.
 
-Reading that button is the interesting bit. The Guide button is **masked out** of the documented
-`XInputGetState` — Microsoft reserved it for the Game Bar. Getting at it requires `XInputGetStateEx`,
-exported **by ordinal 100 only**, with no name and no header entry:
+Reading that button takes some work. The Guide button is masked out of the documented
+`XInputGetState`, since Microsoft reserved it for the Game Bar. Getting at it requires
+`XInputGetStateEx`, which is exported by ordinal 100 only, with no name and no header entry:
 
 ```python
 proto = ctypes.WINFUNCTYPE(ctypes.c_uint32, ctypes.c_uint32, ctypes.POINTER(_XInputState))
 get_state_ex = proto((100, xinput))   # ordinal lookup
 ```
 
-Undocumented, but stable since 2007 and present in both `xinput1_3` and `xinput1_4`. On the ancient
-`xinput9_1_0` stub it's absent — the watcher logs `guide=unavailable` and carries on with
-connect-detection only.
+It's undocumented but has been stable since 2007, and is present in both `xinput1_3` and
+`xinput1_4`. It's missing from the older `xinput9_1_0` stub, in which case the watcher logs
+`guide=unavailable` and carries on with connect-detection only.
 
 > [!NOTE]
-> Windows binds the Guide button to **Xbox Game Bar** by default, so a double-tap may open both.
-> Turn it off in **Settings → Gaming → Xbox Game Bar**.
+> Windows binds the Guide button to Xbox Game Bar by default, so a double-tap may open both. You can
+> turn that off in Settings > Gaming > Xbox Game Bar.
 
 ## Battery warning
 
-A toast appears when a wireless pad's battery reaches the bottom bucket. Toasts never take focus, so
-it's safe mid-game. Wired pads report no battery and are skipped.
+A toast appears when a wireless pad's battery reaches the bottom bucket. Toasts don't take focus, so
+this is safe during a game. Wired pads report no battery and are skipped.
 
 > [!IMPORTANT]
-> **An honest limitation.** XInput has no battery percentage. `XInputGetBatteryInformation` reports
-> one of four coarse buckets only — `EMPTY`, `LOW`, `MEDIUM`, `FULL` — so *"warn me under 10%"* is
-> **not expressible** through this API.
+> XInput has no battery percentage. `XInputGetBatteryInformation` reports one of four coarse buckets
+> (`EMPTY`, `LOW`, `MEDIUM`, `FULL`), so a threshold like "warn me under 10%" can't be expressed
+> through this API.
 
-The warning fires at `EMPTY`, the lowest bucket and the closest available meaning of "about to die".
-Set `BATTERY_WARN_AT = BATTERY_LEVEL_LOW` for an earlier, chattier warning. A true percentage would
-mean parsing raw HID reports from the pad — a much larger job, and out of scope here.
+The warning fires at `EMPTY`, the lowest bucket. Set `BATTERY_WARN_AT` to `BATTERY_LEVEL_LOW` if you
+want an earlier and more frequent warning. Getting a real percentage would mean parsing raw HID
+reports from the pad, which is out of scope here.
 
 ## Waking the screen (`--wake`)
 
-With `--wake`, the watcher turns the monitor back on and dismisses a running screensaver the moment
-the controller connects, so a couch PC goes from dark screen straight to Big Picture.
+With `--wake`, the watcher turns the monitor back on and dismisses a running screensaver when the
+controller connects, so a couch PC goes straight to Big Picture.
 
 > [!CAUTION]
-> **No user-space script can get past the Windows password / PIN lock screen.** That's a deliberate
-> security boundary, not an obstacle to route around. `--wake` only helps when the session is
-> *unlocked underneath* — monitor asleep or screensaver running. If the PC is genuinely locked, the
-> most it does is light up the monitor showing the lock screen.
+> No user-space script can get past the Windows password or PIN lock screen, and this one doesn't
+> try. `--wake` only helps when the session is unlocked underneath, with the monitor asleep or a
+> screensaver running. If the PC is locked, all it does is light up the monitor showing the lock
+> screen.
 
-To make a living-room PC go all the way to the desktop hands-free, change the Windows setting rather
-than the script:
+To make a living-room PC reach the desktop hands-free, change the Windows setting rather than the
+script:
 
-- **Settings → Accounts → Sign-in options → "If you've been away, when should Windows require you to sign in again?" → Never.**
-- If a screensaver is set, untick **"On resume, display logon screen"**.
-- For a secure auto-unlock that *does* satisfy the lock screen, use **Windows Hello**. A controller can't supply a face or fingerprint, but Hello can.
+- Settings > Accounts > Sign-in options > "If you've been away, when should Windows require you to sign in again?" > Never.
+- If a screensaver is set, untick "On resume, display logon screen".
+- Windows Hello will satisfy the lock screen securely. A controller can't supply a face or fingerprint, but Hello can.
 
-Storing your password to auto-type it is **not** supported here. It's a real security risk and it
-defeats the point of the lock.
+Storing your password to auto-type it isn't supported here, because it defeats the point of having
+the lock.
 
 ---
 
 ## How it works
 
-XInput exposes four controller slots. The watcher ticks every 50ms — fast enough to resolve a Guide
-double-tap — and does the heavier work on a schedule: connection state once a second, battery once a
-minute.
+XInput exposes four controller slots. The watcher ticks every 50ms, which is fast enough to resolve
+a Guide double-tap, and does the heavier work on a schedule: connection state once a second, battery
+once a minute.
 
-On a confirmed transition from "none connected" to "connected", and once the guards pass, it calls:
+Once a transition from "none connected" to "connected" is confirmed and the guards pass, it calls:
 
 ```python
 os.startfile("steam://open/bigpicture")
 ```
 
 `os.startfile` uses `ShellExecute`, which respects the `steam://` protocol handler and starts Steam
-first if it isn't running. (`webbrowser.open` would try to hand a non-HTTP URL to a browser.)
+first if it isn't running. `webbrowser.open` would try to hand a non-HTTP URL to a browser instead.
 
 <details>
 <summary><b>A Win32 gotcha worth knowing if you read the source</b></summary>
 
 <br>
 
-Window handles are **pointer-sized**. `ctypes` assumes a C `int` return unless told otherwise, which
-silently truncates every `HWND` on 64-bit and makes handle comparisons meaningless — the bug doesn't
-announce itself, the comparisons just quietly stop matching. The signatures are declared explicitly
-in `user32()` for exactly this reason:
+Window handles are pointer-sized. `ctypes` assumes a C `int` return unless told otherwise, which
+truncates every `HWND` on 64-bit and makes handle comparisons meaningless. Nothing errors; the
+comparisons just stop matching. The signatures are declared explicitly in `user32()` to avoid this:
 
 ```python
 u.GetForegroundWindow.restype = ctypes.c_void_p
@@ -277,7 +269,7 @@ u.MonitorFromWindow.restype   = ctypes.c_void_p
 <details>
 <summary><b>Nothing happens when I run it</b></summary><br>
 
-Confirm you're on native Windows Python, not WSL:
+Check you're on native Windows Python rather than WSL:
 
 ```powershell
 python -c "import os; print(os.name)"   # must print: nt
@@ -287,28 +279,29 @@ python -c "import os; print(os.name)"   # must print: nt
 <details>
 <summary><b><code>No XInput DLL found</code></b></summary><br>
 
-Very old Windows only. `xinput1_3` ships with the DirectX End-User Runtime; install that and retry.
+This affects very old Windows only. `xinput1_3` ships with the DirectX End-User Runtime, so install
+that and retry.
 </details>
 
 <details>
 <summary><b>Big Picture doesn't open, but there's no error</b></summary><br>
 
-Check the URL works at all: paste `steam://open/bigpicture` into <kbd>Win</kbd>+<kbd>R</kbd>. If that
-does nothing, the problem is Steam's protocol handler, not this script.
+Check the URL works at all by pasting `steam://open/bigpicture` into <kbd>Win</kbd>+<kbd>R</kbd>. If
+nothing happens, the problem is Steam's protocol handler rather than this script.
 </details>
 
 <details>
 <summary><b>It opens Big Picture on every reboot</b></summary><br>
 
-You're probably passing `--launch-now`, or your pad reports connected at login. Drop the flag — the
-default already ignores an already-on pad.
+You're probably passing `--launch-now`, or your pad reports connected at login. Drop the flag, since
+the default already ignores a pad that's already on.
 </details>
 
 <details>
 <summary><b>It fired while I was playing</b></summary><br>
 
 Run with `--log` and check `%LOCALAPPDATA%\controller-bigpicture\watcher.log`. Every skip is logged
-with its reason, so the log tells you which guard should have caught it:
+with a reason, so the log will show which guard should have caught it:
 
 ```
 controller connected -> skipped (cooldown)
@@ -320,23 +313,24 @@ controller connected -> skipped (fullscreen app in foreground)
 <details>
 <summary><b>Guide double-tap does nothing</b></summary><br>
 
-Check the startup line in the log for `guide=unavailable`, meaning only `xinput9_1_0` is present and
-ordinal 100 is missing.
+Check the startup line in the log for `guide=unavailable`, which means only `xinput9_1_0` is present
+and ordinal 100 is missing.
 </details>
 
 <details>
 <summary><b><code>--wake</code> lights the monitor but I still see the lock screen</b></summary><br>
 
-Expected when the session requires a password/PIN. See [Waking the screen](#waking-the-screen---wake).
+That's expected when the session requires a password or PIN. See
+[Waking the screen](#waking-the-screen---wake).
 </details>
 
 ## Use it from your iPhone
 
-iOS can't run a background watcher and has no Big Picture of its own, so the Windows behaviour
-doesn't port directly. Two setups do work — full steps in [ios/README.md](ios/README.md):
+iOS can't run a background watcher and has no Big Picture of its own, so this doesn't port directly.
+Two setups do work, with full steps in [ios/README.md](ios/README.md):
 
-1. **Controller connects to iPhone → open a game app** (e.g. Steam Link to stream your PC). A Shortcuts *Bluetooth* automation, no code required.
-2. **iPhone as a remote** that opens Big Picture on the PC, using the included `bigpicture_server.py`:
+1. Controller connects to the iPhone and opens a game app, for example Steam Link to stream your PC. This is a Shortcuts Bluetooth automation and needs no code.
+2. The iPhone acts as a remote that opens Big Picture on the PC, using the included `bigpicture_server.py`:
 
    ```powershell
    python bigpicture_server.py                  # http://<pc-ip>:8765/bigpicture
@@ -346,21 +340,19 @@ doesn't port directly. Two setups do work — full steps in [ios/README.md](ios/
    An iPhone Home Screen shortcut then hits that URL over your LAN.
 
 > [!CAUTION]
-> The LAN server is LAN-only with a shared token at best. Don't expose it to the internet.
+> The LAN server has a shared token at best. Don't expose it to the internet.
 
 ## Not on Windows?
 
 | Platform | Status |
 | -------- | ------ |
-| **Steam Deck / SteamOS** | Already boots into Gamepad UI. You don't need this. |
-| **macOS / Linux desktop** | Different controller APIs (IOKit / evdev), so detection would need rewriting. Open an issue and say which. |
+| Steam Deck / SteamOS | Already boots into Gamepad UI, so you don't need this. |
+| macOS / Linux desktop | These use different controller APIs (IOKit and evdev), so detection would need rewriting. Open an issue and say which. |
 
 ---
 
 <div align="center">
 
-**MIT** — see [LICENSE](LICENSE).
-
-<sub>Built because a PC should not need a keyboard to start a game.</sub>
+MIT. See [LICENSE](LICENSE).
 
 </div>
